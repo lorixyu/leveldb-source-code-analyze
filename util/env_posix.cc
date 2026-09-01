@@ -177,6 +177,10 @@ class PosixRandomAccessFile final : public RandomAccessFile {
  public:
   // The new instance takes ownership of |fd|. |fd_limiter| must outlive this
   // instance, and will be used to determine if .
+  // 永久持有 fd 可以省去不断 open close 的性能损失；
+  // 根据 fd_limiter->Acquire() 判断能否永久持有 fd：
+  // - 如果可以，只由析构函数 close(fd_)，并 Release 资源；
+  // - 如果不可以，构造函数中就 close 传进来的 fd，每次 read 都临时 open 文件，用完时 close。
   PosixRandomAccessFile(std::string filename, int fd, Limiter* fd_limiter)
       : has_permanent_fd_(fd_limiter->Acquire()),
         fd_(has_permanent_fd_ ? fd : -1),
@@ -196,6 +200,7 @@ class PosixRandomAccessFile final : public RandomAccessFile {
     }
   }
 
+  // 不处理短读，短读处理由上层处理;
   Status Read(uint64_t offset, size_t n, Slice* result,
               char* scratch) const override {
     int fd = fd_;
@@ -331,6 +336,12 @@ class PosixWritableFile final : public WritableFile {
 
   Status Flush() override { return FlushBuffer(); }
 
+  // 先刷目录再刷文件：确保新引用的文件在目录项中落盘，防止系统崩溃后出现“清单记录了文件但磁盘上不存在”的状态。
+  // - fdatasync(fd)：仅将文件数据以及必要数据（如文件大小改变）同步写回磁盘。
+  //   对于非必要元数据（如文件访问/修改时间 st_atime、st_mtime 等），不会引发额外的磁盘 I/O。
+  //   因此，fdatasync 的性能通常优于 fsync。
+  // - fsync(fd)：会将文件数据以及所有元数据无条件同步写回磁盘，
+  //   保证元数据的绝对一致性，但会增加额外的磁盘 I/O 开销。
   Status Sync() override {
     // Ensure new files referred to by the manifest are in the filesystem.
     //

@@ -42,15 +42,16 @@ class LEVELDB_EXPORT Comparator {
   // Advanced functions: these are used to reduce the space requirements
   // for internal data structures like index blocks.
 
-  // If *start < limit, changes *start to a short string in [start,limit).
-  // Simple comparator implementations may return with *start unchanged,
-  // i.e., an implementation of this method that does nothing is correct.
+  // 用于压缩内存占用；
+  // 一般用 Block 的最后一个 data 做key
+  // 本实现中：扩大了一个 Block 的 key 的范围，减小了 key 字符串的长度。
+  // 例：Block1[1,2,3] Block2[5,6,7]，函数找到3和5之间存在的4作为key。
+  // abcde & abef  -> key: abd
   virtual void FindShortestSeparator(std::string* start,
                                      const Slice& limit) const = 0;
 
-  // Changes *key to a short string >= *key.
-  // Simple comparator implementations may return with *key unchanged,
-  // i.e., an implementation of this method that does nothing is correct.
+  // 将 key 改为更大 更短的字符串；
+  // 可用于遇到最后一个 Block 时的情况，因为它没有下一个 Block。
   virtual void FindShortSuccessor(std::string* key) const = 0;
 };
 

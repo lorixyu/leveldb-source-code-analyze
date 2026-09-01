@@ -47,6 +47,7 @@ void Log(Logger* info_log, const char* format, ...) {
   }
 }
 
+// 写入文件（覆盖写），任何一步失败就删掉原文件
 static Status DoWriteStringToFile(Env* env, const Slice& data,
                                   const std::string& fname, bool should_sync) {
   WritableFile* file;
