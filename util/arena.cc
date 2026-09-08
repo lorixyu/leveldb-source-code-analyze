@@ -6,6 +6,7 @@
 
 namespace leveldb {
 
+// 默认一个内存块的大小
 static const int kBlockSize = 4096;
 
 Arena::Arena()
@@ -17,7 +18,10 @@ Arena::~Arena() {
   }
 }
 
+// 小对象批量管理，打对象独立管理。
 char* Arena::AllocateFallback(size_t bytes) {
+  // 如果需要的内存大于默认一个Block大小的1/4，
+  // 则单独分配一个刚好 bytes 大小的内存。
   if (bytes > kBlockSize / 4) {
     // Object is more than a quarter of our block size.  Allocate it separately
     // to avoid wasting too much space in leftover bytes.
@@ -35,11 +39,15 @@ char* Arena::AllocateFallback(size_t bytes) {
   return result;
 }
 
+// 分配 bytes 内存，并保证按 align 对齐。
 char* Arena::AllocateAligned(size_t bytes) {
   const int align = (sizeof(void*) > 8) ? sizeof(void*) : 8;
+  // 保证 align 是2的幂。
   static_assert((align & (align - 1)) == 0,
                 "Pointer size should be a power of 2");
+  // 相当于alloc_ptr_ % align；找当前地址相对上一个 align 对齐地址的偏移
   size_t current_mod = reinterpret_cast<uintptr_t>(alloc_ptr_) & (align - 1);
+  // slop -> padding。即到下一个对齐地址的padding。
   size_t slop = (current_mod == 0 ? 0 : align - current_mod);
   size_t needed = bytes + slop;
   char* result;
@@ -55,6 +63,7 @@ char* Arena::AllocateAligned(size_t bytes) {
   return result;
 }
 
+// 分配一个 bytes 大小的内存块，并记录在 blocks_ 中，更新memory_usage_。
 char* Arena::AllocateNewBlock(size_t block_bytes) {
   char* result = new char[block_bytes];
   blocks_.push_back(result);
