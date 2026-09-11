@@ -100,9 +100,9 @@ struct LEVELDB_EXPORT Options {
   // compression is enabled.  This parameter can be changed dynamically.
   size_t block_size = 4 * 1024;
 
-  // Number of keys between restart points for delta encoding of keys.
-  // This parameter can be changed dynamically.  Most clients should
-  // leave this parameter alone.
+  // key 会前缀压缩，每个 key 依赖前一个 key。
+  // 问题：随机查找时必须从 Block 开头一路解压。
+  // 所以引入了重启点，每隔 16bytes 记录一次完整的 key。
   int block_restart_interval = 16;
 
   // Leveldb will write up to this amount of bytes to a file before

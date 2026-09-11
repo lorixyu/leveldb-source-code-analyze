@@ -18,7 +18,7 @@ Arena::~Arena() {
   }
 }
 
-// 小对象批量管理，打对象独立管理。
+// 小对象批量管理，大对象独立管理。
 char* Arena::AllocateFallback(size_t bytes) {
   // 如果需要的内存大于默认一个Block大小的1/4，
   // 则单独分配一个刚好 bytes 大小的内存。

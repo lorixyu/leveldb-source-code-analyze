@@ -58,6 +58,7 @@ size_t BlockBuilder::CurrentSizeEstimate() const {
           sizeof(uint32_t));                     // Restart array length
 }
 
+// 完成 Block 的构建后调用，在 Block 末尾记录 restart 的偏移信息
 Slice BlockBuilder::Finish() {
   // Append restart array
   for (size_t i = 0; i < restarts_.size(); i++) {
@@ -77,15 +78,19 @@ void BlockBuilder::Add(const Slice& key, const Slice& value) {
   size_t shared = 0;
   if (counter_ < options_->block_restart_interval) {
     // See how much sharing to do with previous string
+    // 找公共前缀的size
     const size_t min_length = std::min(last_key_piece.size(), key.size());
     while ((shared < min_length) && (last_key_piece[shared] == key[shared])) {
       shared++;
     }
   } else {
     // Restart compression
+    // Entries 到达了 restart_interval，重置 counter_，将当前 buffer 大小记录。
+    // ** shared 未改变，后续逻辑复用。由于shared=0，buffer中直接记录了完整的key。
     restarts_.push_back(buffer_.size());
     counter_ = 0;
   }
+  // 独有部分的大小
   const size_t non_shared = key.size() - shared;
 
   // Add "<shared><non_shared><value_size>" to buffer_
@@ -93,7 +98,7 @@ void BlockBuilder::Add(const Slice& key, const Slice& value) {
   PutVarint32(&buffer_, non_shared);
   PutVarint32(&buffer_, value.size());
 
-  // Add string delta to buffer_ followed by value
+  // 添加 key 的 delta 部分。
   buffer_.append(key.data() + shared, non_shared);
   buffer_.append(value.data(), value.size());
 
