@@ -17,7 +17,7 @@ class Comparator;
 
 class Block {
  public:
-  // Initialize the block with the specified contents.
+  // 用指定内容初始化block
   explicit Block(const BlockContents& contents);
 
   Block(const Block&) = delete;
@@ -33,10 +33,10 @@ class Block {
 
   uint32_t NumRestarts() const;
 
-  const char* data_;
-  size_t size_;
-  uint32_t restart_offset_;  // Offset in data_ of restart array
-  bool owned_;               // Block owns data_[]
+  const char* data_;  // 指向 block 的指针
+  size_t size_;       // 整个 block 的 size
+  uint32_t restart_offset_;  // 一个 block 中重启点开始记录的位置
+  bool owned_;               // 如果block拥有内存，析构时负责释放内存
 };
 
 }  // namespace leveldb

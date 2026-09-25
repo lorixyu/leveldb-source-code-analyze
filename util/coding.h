@@ -51,6 +51,7 @@ char* EncodeVarint64(char* dst, uint64_t value);
 // Lower-level versions of Put... that write directly into a character buffer
 // REQUIRES: dst has enough space for the value being written
 
+// 把一个固定的 uint32_t 按小端序编进 dst
 inline void EncodeFixed32(char* dst, uint32_t value) {
   uint8_t* const buffer = reinterpret_cast<uint8_t*>(dst);
 
@@ -61,6 +62,7 @@ inline void EncodeFixed32(char* dst, uint32_t value) {
   buffer[3] = static_cast<uint8_t>(value >> 24);
 }
 
+// 把一个固定的 uint64_t 按小端序编进 dst
 inline void EncodeFixed64(char* dst, uint64_t value) {
   uint8_t* const buffer = reinterpret_cast<uint8_t*>(dst);
 
@@ -78,6 +80,7 @@ inline void EncodeFixed64(char* dst, uint64_t value) {
 // Lower-level versions of Get... that read directly from a character buffer
 // without any bounds checking.
 
+// 从 ptr 中解码出一个 uint32_t
 inline uint32_t DecodeFixed32(const char* ptr) {
   const uint8_t* const buffer = reinterpret_cast<const uint8_t*>(ptr);
 
@@ -88,6 +91,7 @@ inline uint32_t DecodeFixed32(const char* ptr) {
          (static_cast<uint32_t>(buffer[3]) << 24);
 }
 
+  // 从 ptr 中解码出一个 uint64_t
 inline uint64_t DecodeFixed64(const char* ptr) {
   const uint8_t* const buffer = reinterpret_cast<const uint8_t*>(ptr);
 
