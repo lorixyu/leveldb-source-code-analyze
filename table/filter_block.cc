@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
+#include "filter_block.h"
 #include "table/filter_block.h"
 
 #include "leveldb/filter_policy.h"
@@ -12,6 +13,7 @@ namespace leveldb {
 // See doc/table_format.md for an explanation of the filter block format.
 
 // Generate new filter every 2KB of data
+// 每 2kb 划分一个 filter
 static const size_t kFilterBaseLg = 11;
 static const size_t kFilterBase = 1 << kFilterBaseLg;
 
@@ -19,6 +21,7 @@ FilterBlockBuilder::FilterBlockBuilder(const FilterPolicy* policy)
     : policy_(policy) {}
 
 void FilterBlockBuilder::StartBlock(uint64_t block_offset) {
+  // 确定 block 属于哪个 filter 区间
   uint64_t filter_index = (block_offset / kFilterBase);
   assert(filter_index >= filter_offsets_.size());
   while (filter_index > filter_offsets_.size()) {
@@ -38,17 +41,19 @@ Slice FilterBlockBuilder::Finish() {
   }
 
   // Append array of per-filter offsets
+  // 记录所有 Filter 数据的总大小
   const uint32_t array_offset = result_.size();
   for (size_t i = 0; i < filter_offsets_.size(); i++) {
-    PutFixed32(&result_, filter_offsets_[i]);
+    PutFixed32(&result_, filter_offsets_[i]); // 记录每个 filter 的偏移
   }
-
-  PutFixed32(&result_, array_offset);
+  PutFixed32(&result_, array_offset); // 记录前面数据的大小
   result_.push_back(kFilterBaseLg);  // Save encoding parameter in result
   return Slice(result_);
 }
 
+// 生成一个 filter
 void FilterBlockBuilder::GenerateFilter() {
+  // 收集到的 key 的数量
   const size_t num_keys = start_.size();
   if (num_keys == 0) {
     // Fast path if there are no keys for this filter
@@ -60,7 +65,9 @@ void FilterBlockBuilder::GenerateFilter() {
   start_.push_back(keys_.size());  // Simplify length computation
   tmp_keys_.resize(num_keys);
   for (size_t i = 0; i < num_keys; i++) {
+    // 指向每个 key 的指针
     const char* base = keys_.data() + start_[i];
+    // 当前 key 的长度
     size_t length = start_[i + 1] - start_[i];
     tmp_keys_[i] = Slice(base, length);
   }
@@ -80,6 +87,7 @@ FilterBlockReader::FilterBlockReader(const FilterPolicy* policy,
   size_t n = contents.size();
   if (n < 5) return;  // 1 byte for base_lg_ and 4 for start of offset array
   base_lg_ = contents[n - 1];
+  // offset 数组在 filet block 中的偏移
   uint32_t last_word = DecodeFixed32(contents.data() + n - 5);
   if (last_word > n - 5) return;
   data_ = contents.data();

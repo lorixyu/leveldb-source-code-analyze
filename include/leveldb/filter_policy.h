@@ -23,6 +23,10 @@
 namespace leveldb {
 
 class Slice;
+    /***
+     * 过滤器， 用于判断对应key是否存在
+     * - 重要实现 BloomFilterPolicy
+     */
 
 class LEVELDB_EXPORT FilterPolicy {
  public:
@@ -40,6 +44,7 @@ class LEVELDB_EXPORT FilterPolicy {
   //
   // Warning: do not change the initial contents of *dst.  Instead,
   // append the newly constructed filter to *dst.
+  // 创建一个过滤器
   virtual void CreateFilter(const Slice* keys, int n,
                             std::string* dst) const = 0;
 
@@ -48,6 +53,7 @@ class LEVELDB_EXPORT FilterPolicy {
   // the key was in the list of keys passed to CreateFilter().
   // This method may return true or false if the key was not on the
   // list, but it should aim to return false with a high probability.
+  // 判断key是否存在
   virtual bool KeyMayMatch(const Slice& key, const Slice& filter) const = 0;
 };
 

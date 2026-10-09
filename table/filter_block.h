@@ -18,8 +18,9 @@
 #include "util/hash.h"
 
 namespace leveldb {
+ class Slice;
 
-class FilterPolicy;
+ class FilterPolicy;
 
 // A FilterBlockBuilder is used to construct all of the filters for a
 // particular Table.  It generates a single string which is stored as
@@ -42,11 +43,11 @@ class FilterBlockBuilder {
   void GenerateFilter();
 
   const FilterPolicy* policy_;
-  std::string keys_;             // Flattened key contents
-  std::vector<size_t> start_;    // Starting index in keys_ of each key
-  std::string result_;           // Filter data computed so far
-  std::vector<Slice> tmp_keys_;  // policy_->CreateFilter() argument
-  std::vector<uint32_t> filter_offsets_;
+  std::string keys_;             // 把收集到的 key 拼在一起存储
+  std::vector<size_t> start_;    // keys_ 中每个 key 的下标
+  std::string result_;           // 最终构建的整个 Filter Block 内容
+  std::vector<Slice> tmp_keys_;  // 临时还原 Slice(key)
+  std::vector<uint32_t> filter_offsets_;  // 每个 filter 在result中的offset
 };
 
 class FilterBlockReader {
@@ -57,9 +58,9 @@ class FilterBlockReader {
 
  private:
   const FilterPolicy* policy_;
-  const char* data_;    // Pointer to filter data (at block-start)
-  const char* offset_;  // Pointer to beginning of offset array (at block-end)
-  size_t num_;          // Number of entries in offset array
+  const char* data_;    // 指向每个 filter 数据的指针(at block-start)
+  const char* offset_;  // offset数组的偏移 (at block-end)
+  size_t num_;          // offset 的数量
   size_t base_lg_;      // Encoding parameter (see kFilterBaseLg in .cc file)
 };
 
