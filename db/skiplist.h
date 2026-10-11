@@ -50,36 +50,31 @@ class SkipList {
   SkipList(const SkipList&) = delete;
   SkipList& operator=(const SkipList&) = delete;
 
-  // Insert key into the list.
-  // REQUIRES: nothing that compares equal to key is currently in the list.
+  // 插入 key，不允许重复 key
   void Insert(const Key& key);
 
-  // Returns true iff an entry that compares equal to key is in the list.
+  // 跳表中是否包含指定 key.
   bool Contains(const Key& key) const;
 
-  // Iteration over the contents of a skip list
+  // 遍历跳表
   class Iterator {
    public:
-    // Initialize an iterator over the specified list.
-    // The returned iterator is not valid.
+    // 初始化迭代器，初始的迭代器无效
     explicit Iterator(const SkipList* list);
 
-    // Returns true iff the iterator is positioned at a valid node.
+    // 判断迭代器是否有效（是否已指向有效节点）
     bool Valid() const;
 
-    // Returns the key at the current position.
-    // REQUIRES: Valid()
+    // 在有效的情况下返回当前位置的key
     const Key& key() const;
 
-    // Advances to the next position.
-    // REQUIRES: Valid()
+    // 移动到下一个位置
     void Next();
 
-    // Advances to the previous position.
-    // REQUIRES: Valid()
+    // 移动到上一个位置
     void Prev();
 
-    // Advance to the first entry with a key >= target
+    // 移动到第一个大于等于target的位置（查找最终key）
     void Seek(const Key& target);
 
     // Position at the first entry in list.
@@ -107,7 +102,7 @@ class SkipList {
   int RandomHeight();
   bool Equal(const Key& a, const Key& b) const { return (compare_(a, b) == 0); }
 
-  // Return true if key is greater than the data stored in "n"
+  // true: key 大于指定的 Node 中的数据
   bool KeyIsAfterNode(const Key& key, Node* n) const;
 
   // Return the earliest node that comes at or after key.
@@ -117,12 +112,10 @@ class SkipList {
   // node at "level" for every level in [0..max_height_-1].
   Node* FindGreaterOrEqual(const Key& key, Node** prev) const;
 
-  // Return the latest node with a key < key.
-  // Return head_ if there is no such node.
+  // 查找小于 key 的 node，如果没有则返回 head_
   Node* FindLessThan(const Key& key) const;
 
-  // Return the last node in the list.
-  // Return head_ if list is empty.
+  // 查找最后一个 node 没有则返回head_
   Node* FindLast() const;
 
   // Immutable after construction
@@ -131,8 +124,7 @@ class SkipList {
 
   Node* const head_;
 
-  // Modified only by Insert().  Read racily by readers, but stale
-  // values are ok.
+  // 仅由 Insert 操作修改，允许读取到旧值.
   std::atomic<int> max_height_;  // Height of the entire list
 
   // Read/written only by Insert().
@@ -176,6 +168,8 @@ struct SkipList<Key, Comparator>::Node {
   std::atomic<Node*> next_[1];
 };
 
+// 分配一个 node 所需的内存，包含若干个 next 指针
+// 返回一个 Node 对象
 template <typename Key, class Comparator>
 typename SkipList<Key, Comparator>::Node* SkipList<Key, Comparator>::NewNode(
     const Key& key, int height) {

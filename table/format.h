@@ -20,6 +20,7 @@ struct ReadOptions;
 
 // BlockHandle is a pointer to the extent of a file that stores a data
 // block or a meta block.
+// 一个指向 SSTable 文件中各种 block 的处理器，记录 block 在文件的 offset 和 block 的大小
 class BlockHandle {
  public:
   // Maximum encoding length of a BlockHandle
@@ -43,8 +44,7 @@ class BlockHandle {
   uint64_t size_;
 };
 
-// Footer encapsulates the fixed information stored at the tail
-// end of every table file.
+ // 定位 Metaindex Block 和 Index Block
 class Footer {
  public:
   // Encoded length of a Footer.  Note that the serialization of a
